@@ -24,7 +24,7 @@ release: clean
 	@for target in $(TARGETS); do \
 		OS=$$(echo $$target | cut -d/ -f1); \
         ARCH=$$(echo $$target | cut -d/ -f2); \
-		BIN_NAME=$(APP_NAME); \
+		BIN_NAME=$(APP_NAME)-$$OS-$$ARCH; \
 		if [ "$$OS" = "windows" ]; then BIN_NAME=$${BIN_NAME}.exe; fi; \
 		echo "🔨 Building for $$OS/$$ARCH..."; \
 		GOOS=$$OS GOARCH=$$ARCH $(GO_CMD) build -o $(RELEASE_DIR)/$$BIN_NAME $(MAIN_FILE); \
