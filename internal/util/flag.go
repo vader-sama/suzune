@@ -31,13 +31,13 @@ func ParseFlags() *Flags {
 	}
 	flag.Parse()
 	args := flag.Args()
-	if len(args) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
 	if flags.Version {
 		fmt.Println("Suzune v2.0.0")
 		os.Exit(0)
+	}
+	if len(args) == 0 {
+		flag.Usage()
+		os.Exit(1)
 	}
 	flags.URL = args[0]
 	parsed, err := url.ParseRequestURI(flags.URL)
