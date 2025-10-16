@@ -2,17 +2,15 @@ package main
 
 import (
 	"fmt"
-	"net/url"
+	"io"
 	"os"
-	"path"
-	"path/filepath"
 	"suzune/internal/http"
 	"suzune/internal/util"
 )
 
 func main() {
 	flags := util.ParseFlags()
-	u, err := url.Parse(flags.URL)
+	fullPath, err := util.ResolveOutputPath(flags.URL, flags.Output)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -23,18 +21,23 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	filename := path.Base(u.Path)
-	fullPath := filepath.Join(flags.Output, filename)
-	dst, err := os.OpenFile(fullPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if stat.Size <= 0 {
+		panic(fmt.Errorf("file size must be greater than 0"))
+	}
+	dst, err := os.OpenFile(fullPath, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		panic(fmt.Errorf("failed to open file %s: %w", fullPath, err))
 	}
-	if err := dst.Truncate(stat.Size); err != nil {
+	if _, err := dst.Seek(stat.Size-1, io.SeekStart); err != nil {
+		panic(fmt.Errorf("seek failed: %w", err))
+	}
+	if _, err := dst.Write([]byte{0}); err != nil {
 		panic(fmt.Errorf("preallocate failed: %w", err))
 	}
+
 	chunks, err := src.Tune()
 	if err != nil {
-		panic(fmt.Errorf("failed to tune %s: %w", filename, err))
+		panic(fmt.Errorf("failed to tune: %w", err))
 	}
 	fmt.Printf("Mime-Type: %s | Size: %s | Chunks: %d\n", stat.ContentType, util.HumanSize(stat.Size), chunks)
 	src.AddProgressBar(util.NewProgressBar(stat.Size))
