@@ -44,5 +44,5 @@ func main() {
 	if err = src.Save(dst); err != nil {
 		panic(fmt.Errorf("failed to save %s: %w", fullPath, err))
 	}
-	fmt.Printf("Done! File saved to %s\n", fullPath)
+	fmt.Printf("\nDone! File saved to %s\n", fullPath)
 }
