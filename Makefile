@@ -1,37 +1,58 @@
-BINARY=suzune
-BUILD_DIR=bin
-MAIN_PATH=cmd/suzune/main.go
-COLOR_RED=\033[0;31m
-COLOR_GREEN=\033[0;32m
-COLOR_YELLOW=\033[0;33m
-COLOR_RESET=\033[0m
+APP_NAME := suzune
+PKG := ./...
+BUILD_DIR := ./bin
+RELEASE_DIR := ./release
+MAIN_FILE := ./cmd/suzune
+GO_CMD := go
+TARGETS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
-all: clean build_mac build_linux build_windows
-	@echo "Complied succesfully!"
+.PHONY: all build run clean test lint tidy deps release
 
-build_mac:
-	@echo "Compiling for [${COLOR_GREEN}MacOS${COLOR_RESET}] (${COLOR_YELLOW}x86-64${COLOR_RESET})"
-	env GOOS=darwin GOARCH=amd64 go build -o ${BUILD_DIR}/${BINARY}_macos_x86-64 ${MAIN_PATH}
+all: build
 
-	@echo "Compiling for [${COLOR_GREEN}MacOS${COLOR_RESET}] (${COLOR_YELLOW}ARM64${COLOR_RESET})"
-	env GOOS=darwin GOARCH=arm64 go build -o ${BUILD_DIR}/${BINARY}_macos_arm64 ${MAIN_PATH}
- 
-build_linux: 
-	@echo "Compiling for [${COLOR_GREEN}Linux${COLOR_RESET}] (${COLOR_YELLOW}x86-64${COLOR_RESET})"
-	env GOOS=linux GOARCH=amd64 go build -o ${BUILD_DIR}/${BINARY}_linux_x86-64 ${MAIN_PATH}
+build:
+	@echo "🔨 Building..."
+	@start=$$(date +%s); \
+	$(GO_CMD) build -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_FILE); \
+	end=$$(date +%s); \
+	duration=$$((end - start)); \
+	echo "✅ Build complete! Binary is at $(BUILD_DIR)/$(APP_NAME) (took $${duration}s)"
 
-	@echo "Compiling for [${COLOR_GREEN}Linux${COLOR_RESET}] (${COLOR_YELLOW}ARM64${COLOR_RESET})"
-	env GOOS=linux GOARCH=arm64 go build -o ${BUILD_DIR}/${BINARY}_linux_arm64 ${MAIN_PATH}
- 
-build_windows: 
-	@echo "Compiling for [${COLOR_GREEN}Windows${COLOR_RESET}] (${COLOR_YELLOW}x86-64${COLOR_RESET})"
-	env GOOS=windows GOARCH=amd64 go build -o ${BUILD_DIR}/${BINARY}_widnows_x86-64 ${MAIN_PATH}
+release: clean
+	@echo "🚀 Building release binaries..."
+	@mkdir -p $(RELEASE_DIR)
+	@for target in $(TARGETS); do \
+		OS=$$(echo $$target | cut -d/ -f1); \
+        ARCH=$$(echo $$target | cut -d/ -f2); \
+		BIN_NAME=$(APP_NAME); \
+		if [ "$$OS" = "windows" ]; then BIN_NAME=$${BIN_NAME}.exe; fi; \
+		echo "🔨 Building for $$OS/$$ARCH..."; \
+		GOOS=$$OS GOARCH=$$ARCH $(GO_CMD) build -o $(RELEASE_DIR)/$$BIN_NAME $(MAIN_FILE); \
+	done
+	@echo "✅ Release build complete! Binaries are in $(RELEASE_DIR)"
 
-	@echo "Compiling for [${COLOR_GREEN}Windows${COLOR_RESET}] (${COLOR_YELLOW}ARM64${COLOR_RESET})"
-	env GOOS=windows GOARCH=arm64 go build -o ${BUILD_DIR}/${BINARY}_windows_arm64 ${MAIN_PATH}
+run: build
+	@echo "🚀 Running $(APP_NAME)..."
+	@$(BUILD_DIR)/$(APP_NAME)
+
+lint:
+	@echo "🔍 Linting code..."
+	@golangci-lint run
+	@echo "✅ Linting complete. No major issues found!"
+
+tidy:
+	@echo "🧹 Tidying modules..."
+	@$(GO_CMD) mod tidy
+	@$(GO_CMD) mod verify
+	@echo "✅ Modules tidy and verified."
+
+deps:
+	@echo "📦 Downloading dependencies..."
+	@$(GO_CMD) mod download
+	@echo "✅ Dependencies downloaded."
 
 clean:
-	@echo "Cleaning ${COLOR_RED}${BUILD_DIR}${COLOR_RESET}"
-	rm -rf bin/*
-
-.PHONY: all clean build_mac build_linux build_windows
+	@echo "🧺 Cleaning..."
+	@rm -rf $(BUILD_DIR)
+	@rm -rf $(RELEASE_DIR)
+	@echo "✅ Clean complete. binaries removed."

@@ -1,5 +1,7 @@
 # Build path
 /bin
+/release
+/.idea
 
 # Binaries for programs and plugins
 *.exe
@@ -17,5 +19,5 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# Go workspace file
+# Go workspace http
 go.work
