@@ -32,7 +32,7 @@ func ParseFlags() *Flags {
 	flag.Parse()
 	args := flag.Args()
 	if flags.Version {
-		fmt.Println("Suzune v2.0.0")
+		fmt.Println("Suzune v2.0.1")
 		os.Exit(0)
 	}
 	if len(args) == 0 {
